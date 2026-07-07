@@ -25,7 +25,6 @@ def save(scene_or_mesh, name):
     print("wrote", os.path.relpath(path))
 
 
-# 01 - Casco: esfera con visor
 def casco():
     head = colored(trimesh.creation.icosphere(subdivisions=3, radius=1.0),
                    [230, 236, 245, 255])
@@ -35,7 +34,6 @@ def casco():
     return trimesh.Scene([head, visor])
 
 
-# 02 - Brujula: cilindro plano + aguja
 def brujula():
     body = colored(trimesh.creation.cylinder(radius=1.0, height=0.28, sections=48),
                    [21, 29, 51, 255])
@@ -47,7 +45,6 @@ def brujula():
     return trimesh.Scene([body, ring, needle])
 
 
-# 03 - Botiquin: caja con cruz
 def botiquin():
     box = colored(trimesh.creation.box(extents=[1.6, 1.1, 0.7]),
                   [230, 236, 245, 255])
@@ -57,7 +54,6 @@ def botiquin():
     return trimesh.Scene([box, v, h])
 
 
-# 04 - Panel de oxigeno: panel con "botones"
 def panel():
     board = colored(trimesh.creation.box(extents=[1.8, 1.2, 0.15]),
                     [21, 29, 51, 255])
@@ -71,7 +67,6 @@ def panel():
     return trimesh.Scene(parts)
 
 
-# 05 - Guante: caja alargada (palma) + dedos
 def guante():
     palm = colored(trimesh.creation.box(extents=[0.9, 1.0, 0.35]),
                    [77, 166, 255, 255])

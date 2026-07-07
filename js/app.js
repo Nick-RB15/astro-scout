@@ -1,9 +1,3 @@
-/* =========================================================================
-   ASTRO SCOUT — NUCLEO DE LA APP
-   Enrutado, progreso, inmersion (starfield, sonido, confeti), insignias,
-   visor 3D interactivo (hotspots, AR, controles) y el bus de eventos que
-   conecta al Instructor IA y al tracking de gestos.
-   ========================================================================= */
 import { STATIONS, STATION_ORDER, FACTS } from "./data.js";
 
 /* ----------------------------- ESTADO ---------------------------------- */
