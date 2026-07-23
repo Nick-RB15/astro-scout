@@ -1299,7 +1299,7 @@ function handleMinigame(station, gesture, res, statusEl) {
     }
     drawBrujulaGame(stCtx, stCanvas);
   } else if (station === "casco") {
-    const done = updateCascoGame(gesture2, { x: px, y: py });
+    const done = updateCascoGame(gesture, { x: px, y: py });
     if (done && confirmedFor !== window.CURRENT_STATION) {
       confirmedFor = window.CURRENT_STATION;
       statusEl.textContent = "CASCO ASEGURADO";
@@ -1307,7 +1307,7 @@ function handleMinigame(station, gesture, res, statusEl) {
     }
     drawCascoGame(stCtx, stCanvas);
   } else if (station === "botiquin") {
-    const done = updateBotiquinGame(gesture2, { x: px, y: py });
+    const done = updateBotiquinGame(gesture, { x: px, y: py });
     if (done && confirmedFor !== window.CURRENT_STATION) {
       confirmedFor = window.CURRENT_STATION;
       statusEl.textContent = "COMPANERO ESTABILIZADO";
@@ -1315,7 +1315,7 @@ function handleMinigame(station, gesture, res, statusEl) {
     }
     drawBotiquinGame(stCtx, stCanvas);
   } else if (station === "panel") {
-    const done = updatePanelGame(gesture2, { x: px, y: py });
+    const done = updatePanelGame(gesture, { x: px, y: py });
     if (done && confirmedFor !== window.CURRENT_STATION) {
       confirmedFor = window.CURRENT_STATION;
       statusEl.textContent = "TANQUE REPARADO";
@@ -1323,7 +1323,7 @@ function handleMinigame(station, gesture, res, statusEl) {
     }
     drawPanelGame(stCtx, stCanvas);
   } else if (station === "guante") {
-    const done = updateGuanteGame(gesture2, { x: px, y: py });
+    const done = updateGuanteGame(gesture, { x: px, y: py });
     if (done && confirmedFor !== window.CURRENT_STATION) {
       confirmedFor = window.CURRENT_STATION;
       statusEl.textContent = "SISTEMA ELECTRICO REPARADO";
