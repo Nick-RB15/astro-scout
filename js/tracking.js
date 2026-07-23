@@ -1334,8 +1334,9 @@ function handleMinigame(station, gesture, res, statusEl) {
   return true;
 }
 
-function stLoop(statusEl, readEl, confEl) {
-  if (!stRunning) return;
+// Per-frame work. May throw (MediaPipe, canvas, etc.) — stLoop guards it so a
+// single bad frame can never permanently freeze the tracking loop.
+function stFrame(statusEl, readEl, confEl) {
   const now = performance.now();
   const expected = GESTURE_MAP[window.CURRENT_STATION];
   let matched = false;
@@ -1354,7 +1355,6 @@ function stLoop(statusEl, readEl, confEl) {
         // Check if this station has a mini-game
         if (MINIGAME_STATIONS.includes(station)) {
           handleMinigame(station, resolved, res, statusEl);
-          stRaf = requestAnimationFrame(() => stLoop(statusEl, readEl, confEl));
           return;
         }
 
@@ -1365,11 +1365,11 @@ function stLoop(statusEl, readEl, confEl) {
           if (alt.categoryName === expected.value && alt.score > 0.25) matched = true;
         }
       } else {
-        if (readEl) { readEl.textContent = "Detectado: —"; if (confEl) confEl.style.width = "0%"; }
+        if (readEl) readEl.textContent = "Detectado: —";
+        if (confEl) confEl.style.width = "0%";
         // Still draw mini-game even without gestures
         if (MINIGAME_STATIONS.includes(station)) {
           handleMinigame(station, null, { landmarks: [], gestures: [] }, statusEl);
-          stRaf = requestAnimationFrame(() => stLoop(statusEl, readEl, confEl));
           return;
         }
       }
@@ -1399,7 +1399,17 @@ function stLoop(statusEl, readEl, confEl) {
       if (expected) statusEl.textContent = "Esperando gesto: " + expected.label + "...";
     }
   }
-  stRaf = requestAnimationFrame(() => stLoop(statusEl, readEl, confEl));
+}
+
+function stLoop(statusEl, readEl, confEl) {
+  if (!stRunning) return;
+  try {
+    stFrame(statusEl, readEl, confEl);
+  } catch (err) {
+    // Never let one frame kill tracking — log and keep the loop alive.
+    console.error("[AstroScout] error en el frame de tracking:", err);
+  }
+  if (stRunning) stRaf = requestAnimationFrame(() => stLoop(statusEl, readEl, confEl));
 }
 
 async function startStationCamera(container) {
@@ -1425,6 +1435,8 @@ async function startStationCamera(container) {
     return false;
   }
 
+  // Evita que el control del modelo 3D y el mini-juego usen el recognizer a la vez.
+  stopModelHandControl();
   stRunning = true; confirmedFor = null; holdStart = null;
   const station = window.CURRENT_STATION;
 
@@ -1615,6 +1627,9 @@ function modelHandLoop() {
 }
 
 async function startModelHandControl() {
+  // El mini-juego y el control del modelo comparten el mismo GestureRecognizer:
+  // no pueden ejecutarse a la vez o MediaPipe recibe frames intercalados y falla.
+  if (stRunning) stopStationCamera(document.getElementById("tracking-widget"));
   ensureMhcOverlay();
   mhcHint.style.display = "block";
   mhcHint.textContent = "Cargando cámara...";
