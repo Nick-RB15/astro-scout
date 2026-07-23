@@ -37,12 +37,13 @@
     <h1 class="hub-headline">Bienvenido, cadete.</h1>
     <p class="hub-sub">
       Cada estación pone a prueba una habilidad real de exploración espacial.
-      Escanea el QR de la estación, selecciónala aquí, o actívala con la mano.
+      Escanea el QR de la estación o selecciónala aquí.
       Completa cada gesto para desbloquear la siguiente y subir de rango.
     </p>
 
     <div class="hub-actions">
-      <button class="btn primary" id="btn-handnav">🖐 Navegar con la mano</button>
+      <!-- Navegación con la mano desactivada (código conservado en tracking.js) -->
+      <button class="btn primary" id="btn-handnav" style="display:none;">🖐 Navegar con la mano</button>
       <button class="btn" id="btn-qr">📱 Códigos QR</button>
       <button class="btn" id="btn-badges">🏅 Insignias</button>
       <button class="btn" id="btn-fact">✨ Dato curioso</button>
@@ -78,6 +79,7 @@
       </model-viewer>
       <div class="viewer-toolbar">
         <button class="tool-btn active" id="tb-rotate" title="Auto-rotación">⟳</button>
+        <button class="tool-btn" id="tb-hand" title="Controlar con la mano (cámara)">✋</button>
         <button class="tool-btn" id="tb-reset" title="Reiniciar vista">⌂</button>
         <button class="tool-btn" id="tb-ar" title="Ver en tu espacio (AR)">◧</button>
         <button class="tool-btn" id="tb-fs" title="Pantalla completa">⛶</button>

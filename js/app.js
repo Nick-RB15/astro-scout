@@ -1,18 +1,23 @@
 import { STATIONS, STATION_ORDER, FACTS } from "./data.js";
 
 /* ----------------------------- ESTADO ---------------------------------- */
+/* Perfil automático por sesión: cada dispositivo/pestaña que entra tiene su
+   propio progreso aislado. Usamos sessionStorage para que una persona no
+   sobreescriba ni cierre el progreso de otra. Al cerrar la pestaña, ese
+   perfil se descarta y el siguiente cadete empieza limpio. */
 const SAVE_KEY = "astroscout.progress.v1";
+const store = window.sessionStorage;
 const state = loadState();
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = store.getItem(SAVE_KEY);
     if (raw) return JSON.parse(raw);
   } catch (_) {}
   return { completed: {}, xp: 0, sound: true };
 }
 function saveState() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (_) {}
+  try { store.setItem(SAVE_KEY, JSON.stringify(state)); } catch (_) {}
 }
 
 const RANKS = [
@@ -244,6 +249,13 @@ function wireViewerToolbar() {
   const tbReset = document.getElementById("tb-reset");
   const tbFs = document.getElementById("tb-fs");
   const tbAr = document.getElementById("tb-ar");
+  const tbHand = document.getElementById("tb-hand");
+
+  tbHand?.addEventListener("click", () => {
+    try {
+      window.AstroScoutTracking?.toggleModelControl?.();
+    } catch (err) { console.error(err); toast("ERROR", "No se pudo activar el control por mano.", "amber"); }
+  });
 
   tbRotate?.addEventListener("click", (e) => {
     try {

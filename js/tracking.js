@@ -1557,22 +1557,129 @@ function stopHandNav() {
   const btn = document.getElementById("btn-handnav"); if (btn) btn.textContent = "Navegar con la mano";
 }
 
+/* ========================================================================
+   MODO 3 — CONTROL DEL MODELO 3D CON LA MANO (dentro de cada estacion)
+   -------------------------------------------------------------------------
+   Con la camara: mano ABIERTA (dedos separados) acerca el modelo, PUNO lo
+   aleja, y moviendo la mano se gira/inclina. Simple e intuitivo. Usa el
+   mismo GestureRecognizer ya cargado.
+   ======================================================================== */
+let mhcVideo = null, mhcRunning = false, mhcRaf = null, mhcHint = null;
+// Objetivo (suavizado) de la orbita de camara del <model-viewer>
+let mhcCurTheta = 0, mhcCurPhi = 75, mhcCurRadius = 105;
+let mhcTgtTheta = 0, mhcTgtPhi = 75, mhcTgtRadius = 105;
+
+function ensureMhcOverlay() {
+  if (!mhcVideo) {
+    mhcVideo = document.createElement("video");
+    mhcVideo.muted = true; mhcVideo.playsInline = true;
+    mhcVideo.style.cssText = "position:fixed;right:16px;bottom:16px;width:150px;border:1px solid var(--line);border-radius:10px;transform:scaleX(-1);z-index:60;background:#000;";
+    document.body.appendChild(mhcVideo);
+  }
+  if (!mhcHint) {
+    mhcHint = document.createElement("div");
+    mhcHint.className = "hand-hint";
+    document.body.appendChild(mhcHint);
+  }
+}
+
+function modelHandLoop() {
+  if (!mhcRunning) return;
+  const mv = document.getElementById("st-model");
+  const now = performance.now();
+  if (mv && mhcVideo.readyState >= 2 && gestureRecognizer) {
+    const res = gestureRecognizer.recognizeForVideo(mhcVideo, now);
+    if (res.landmarks && res.landmarks.length) {
+      const lm = res.landmarks[0];
+      const tip = lm[8], thumb = lm[4], palm = lm[9];
+      // Apertura de la mano (pulgar-indice): puno ~0.03, mano abierta ~0.28
+      const spread = Math.hypot(tip.x - thumb.x, tip.y - thumb.y);
+      const spreadN = Math.max(0, Math.min(1, (spread - 0.03) / 0.24));
+      // Mano abierta = radio pequeno (acercar); puno = radio grande (alejar)
+      mhcTgtRadius = 165 - spreadN * 115;           // ~50%..165%
+      // Posicion horizontal de la palma => rotacion (theta). Camara espejada.
+      mhcTgtTheta = (0.5 - palm.x) * 340;           // -170deg..170deg
+      // Posicion vertical => inclinacion (phi)
+      mhcTgtPhi = 20 + Math.max(0, Math.min(1, palm.y)) * 80;  // 20deg..100deg
+      mhcHint.textContent = "Mano abierta = acercar · puño = alejar · mueve la mano para girar";
+    } else {
+      mhcHint.textContent = "Muestra tu mano a la cámara...";
+    }
+  }
+  // Suavizado para un movimiento fluido
+  mhcCurTheta  += (mhcTgtTheta  - mhcCurTheta)  * 0.15;
+  mhcCurPhi    += (mhcTgtPhi    - mhcCurPhi)    * 0.15;
+  mhcCurRadius += (mhcTgtRadius - mhcCurRadius) * 0.15;
+  if (mv) mv.cameraOrbit = `${mhcCurTheta.toFixed(1)}deg ${mhcCurPhi.toFixed(1)}deg ${mhcCurRadius.toFixed(1)}%`;
+  mhcRaf = requestAnimationFrame(modelHandLoop);
+}
+
+async function startModelHandControl() {
+  ensureMhcOverlay();
+  mhcHint.style.display = "block";
+  mhcHint.textContent = "Cargando cámara...";
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+    mhcVideo.srcObject = stream; await mhcVideo.play();
+  } catch (e) {
+    mhcHint.textContent = "No se pudo acceder a la cámara.";
+    window.AstroScout?.toast("CÁMARA", "No se pudo acceder a la cámara. Revisa los permisos.", "amber");
+    return false;
+  }
+  mhcVideo.style.display = "block";
+  try { await ensureGesture(null); }
+  catch (err) { console.error(err); mhcHint.textContent = "Error cargando el modelo de manos."; return false; }
+
+  const mv = document.getElementById("st-model");
+  if (mv) mv.removeAttribute("auto-rotate");
+  const tbRotate = document.getElementById("tb-rotate");
+  if (tbRotate) tbRotate.classList.remove("active");
+
+  // Inicia desde la vista actual por defecto
+  mhcCurTheta = 0; mhcCurPhi = 75; mhcCurRadius = 105;
+  mhcTgtTheta = 0; mhcTgtPhi = 75; mhcTgtRadius = 105;
+  mhcRunning = true;
+  modelHandLoop();
+  window.AstroScout?.toast("CONTROL POR MANO", "Mano abierta acerca, puño aleja. Mueve la mano para girar el modelo.", "amber");
+  return true;
+}
+
+function stopModelHandControl() {
+  mhcRunning = false;
+  if (mhcRaf) cancelAnimationFrame(mhcRaf);
+  if (mhcVideo && mhcVideo.srcObject) mhcVideo.srcObject.getTracks().forEach(t => t.stop());
+  if (mhcVideo) mhcVideo.style.display = "none";
+  if (mhcHint) mhcHint.style.display = "none";
+  const btn = document.getElementById("tb-hand");
+  if (btn) btn.classList.remove("active");
+}
+
 /* ---------------------------- INTEGRACION ------------------------------- */
 function initStationTracking() {
   const container = document.getElementById("tracking-widget");
   if (!container) return;
   stopStationCamera(container);
+  stopModelHandControl();
   buildStationUI(container);
 }
 
 window.AstroScoutTracking = {
   init: initStationTracking, startHandNav, stopHandNav,
+  startModelHandControl, stopModelHandControl,
   toggleHandNav: () => {
     const btn = document.getElementById("btn-handnav");
     if (navRunning) { stopHandNav(); }
     else { startHandNav(); if (btn) btn.textContent = "Detener mano"; }
+  },
+  toggleModelControl: () => {
+    const btn = document.getElementById("tb-hand");
+    if (mhcRunning) { stopModelHandControl(); }
+    else { startModelHandControl(); if (btn) btn.classList.add("active"); }
   }
 };
 
 document.addEventListener("astro:station", initStationTracking);
-document.addEventListener("astro:hub", () => stopStationCamera(document.getElementById("tracking-widget")));
+document.addEventListener("astro:hub", () => {
+  stopStationCamera(document.getElementById("tracking-widget"));
+  stopModelHandControl();
+});
